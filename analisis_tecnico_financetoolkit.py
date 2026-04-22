@@ -11,6 +11,7 @@ from financetoolkit import Toolkit
 
 
 logging.getLogger("financetoolkit").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 TICKERS = ["JPM", "KO", "BA"]
 START_DATE = "2013-01-01"
@@ -36,11 +37,13 @@ tech = companies.technicals
 def get_tech_safe(method, **kwargs) -> pd.DataFrame:
     try:
         return method(**kwargs)
-    except Exception:
+    except Exception as exc:
+        logger.warning("No se pudo ejecutar %s: %s", method.__name__, exc)
         return pd.DataFrame()
 
 
 def call_indicator(method, window: Optional[int] = None, period: str = PERIOD) -> pd.DataFrame:
+    """Llama indicadores de FinanceToolkit mapeando firmas distintas de parámetros."""
     params = inspect.signature(method).parameters
     kwargs = {}
 
@@ -99,8 +102,8 @@ def extract_series(df: pd.DataFrame, ticker: str, sub_col: Optional[str] = None)
             return df[sub_col]
         if ticker in df.columns:
             return df[ticker]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("No se pudo extraer serie para %s (%s): %s", ticker, sub_col, exc)
 
     return pd.Series(dtype=float)
 
@@ -123,9 +126,11 @@ def get_ohlc_for_ticker(price_df: pd.DataFrame, ticker: str) -> pd.DataFrame:
 
 
 def draw_candles(ax, ohlc: pd.DataFrame, width: float = 0.65) -> None:
+    """Dibuja velas OHLC en un eje de Matplotlib usando un DataFrame con Open, High, Low y Close."""
     if ohlc.empty:
         return
 
+    # Evita cuerpos de tamaño cero cuando Open == Close para que la vela siga siendo visible.
     min_body_height = 1e-6
     x_vals = mdates.date2num(ohlc.index.to_pydatetime())
     ohlc_values = ohlc[["Open", "High", "Low", "Close"]].to_numpy()
