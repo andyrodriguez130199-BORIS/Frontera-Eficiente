@@ -175,7 +175,7 @@ for ticker in TICKERS:
         continue
 
     fig, axes = plt.subplots(8, 1, figsize=(16, 24), sharex=True)
-    fig.suptitle(f"Análisis Técnico Individual - {ticker}", fontsize=18, fontweight="bold", y=0.995)
+    fig.suptitle(f"Análisis Técnico Individual - {ticker}", fontsize=18, fontweight="bold", y=0.99)
 
     # 1) EMA + Velas
     draw_candles(axes[0], ohlc)
