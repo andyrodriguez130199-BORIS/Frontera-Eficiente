@@ -18,7 +18,8 @@ END_DATE = "2024-01-01"
 PERIOD = "daily"
 
 api_key = os.getenv("FMP_API_KEY")
-if api_key in (None, "", "FINANCIAL_MODELING_PREP_KEY"):
+INVALID_API_KEY_VALUES = {None, "", "FINANCIAL_MODELING_PREP_KEY"}
+if api_key in INVALID_API_KEY_VALUES:
     api_key = None
 
 companies = Toolkit(
@@ -125,16 +126,18 @@ def draw_candles(ax, ohlc: pd.DataFrame, width: float = 0.65) -> None:
     if ohlc.empty:
         return
 
+    min_body_height = 1e-6
     x_vals = mdates.date2num(ohlc.index.to_pydatetime())
+    ohlc_values = ohlc[["Open", "High", "Low", "Close"]].to_numpy()
 
-    for x, (open_, high_, low_, close_) in zip(x_vals, ohlc[["Open", "High", "Low", "Close"]].to_numpy()):
+    for x, (open_, high_, low_, close_) in zip(x_vals, ohlc_values):
         color = "#1f9d55" if close_ >= open_ else "#d64545"
         ax.vlines(x, low_, high_, color=color, linewidth=1.2, alpha=0.9, zorder=1)
 
         body_low = min(open_, close_)
         body_height = abs(close_ - open_)
         if body_height == 0:
-            body_height = 1e-6
+            body_height = min_body_height
 
         rect = Rectangle(
             (x - width / 2, body_low),
